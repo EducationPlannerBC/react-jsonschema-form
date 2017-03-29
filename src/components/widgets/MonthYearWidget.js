@@ -1,5 +1,14 @@
 import React, { Component, PropTypes } from "react";
-import { asNumber, shouldRender, parseDateString, toDateString, pad } from "../../utils";
+import { 
+  asNumber,
+  addDefaultOptionIfRequired,
+  getDefaultOption,
+  pad,
+  parseDateString, 
+  pascalize,
+  shouldRender,
+  toDateString
+ } from "../../utils";
 
 const NOT_SPECIFIED_DATE = "0000-01-01";
 const ASCENDING = "asc";
@@ -19,6 +28,8 @@ const DateElement = (props) => {
     let enumOptions = widgetOptions.month.enum.map((value, index) => {
       return {value: value, label: widgetOptions.month.enumNames[index]};
     });
+
+    enumOptions = addDefaultOptionIfRequired(enumOptions, type);
 
     options = { enumOptions };
   }
@@ -47,9 +58,8 @@ const isCompleteDate = (state) => {
 
 const configureYearOptions = (type, start, stop, orderYearBy) => {
   // Capitalize the first character of the date type (i.e. year, month, day, etc.)
-  const typeLabel = type.toLowerCase().replace(/\b[a-z](?=[a-z]{2})/g, function (letter) {
-    return letter.toUpperCase();
-  });
+  const typeLabel = pascalize(type);
+
   // Initialize the list of options with the default option (i.e. Year..., Month..., Day..., etc.)
   let options = [{ value: -1, label: typeLabel + "..." }];
   // If getting  options for year, and they are to be sorted in descending order...

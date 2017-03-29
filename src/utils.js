@@ -407,6 +407,33 @@ export function getNotSpecifiedOption() {
   };
 }
 
+export function pascalize(stringToPascalize) {
+  const pascalizedString = stringToPascalize.toLowerCase().replace(/\b[a-z](?=[a-z]{2})/g, function (letter) {
+    return letter.toUpperCase();
+  });
+
+  return pascalizedString;
+}
+
+export function getDefaultOption(defaultOptionLabel) {
+  return {
+    value: "",
+    label: "Select " + defaultOptionLabel + "..."
+  };
+}
+
+export function addDefaultOptionIfRequired(enumOptions, defaultOptionType) {
+  let defaultOptionLabel = pascalize(defaultOptionType);
+
+  let defaultOption = getDefaultOption(defaultOptionLabel);
+
+  if (!!enumOptions[0] && enumOptions[0].value !== defaultOption.value) {
+    enumOptions.unshift(defaultOption);
+  }
+
+  return enumOptions;
+}
+
 export function optionsList(schema) {
   return schema.enum.map((value, i) => {
     const label = schema.enumNames && schema.enumNames[i] || String(value);
@@ -423,7 +450,6 @@ function findSchemaDefinition($ref, definitions = {}) {
   // No matching definition found, that's an error (bogus schema?)
   throw new Error(`Could not find a definition for ${$ref}.`);
 }
-
 export function retrieveSchema(schema, definitions = {}) {
   // No $ref attribute found, returning the original schema.
   if (!schema.hasOwnProperty("$ref")) {
