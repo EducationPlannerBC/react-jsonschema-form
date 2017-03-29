@@ -1,6 +1,6 @@
 import React, {PropTypes} from "react";
 import {rangeSpec} from "../../utils";
-import BaseInput from "./EPBCBaseInput";
+import BaseInput from "./BaseInput";
 
 function RangeWidget(props) {
   const {schema, value} = props;

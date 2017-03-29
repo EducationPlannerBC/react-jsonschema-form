@@ -5,7 +5,7 @@ import {
   getWidget,
   getUiOptions,
   optionsList,
-  getNotSpecifiedOption,
+  getDefaultOption,
   getDefaultRegistry
 } from "../../utils";
 
@@ -33,16 +33,15 @@ function StringField(props) {
 
   // If this field consists of one or more options to be selected...
   if (enumOptions) {
-    const notSpecifiedOption = getNotSpecifiedOption();
     // If this list of options does not yet have a default option, add one...
-    if (enumOptions.findIndex(eo => eo.value === notSpecifiedOption.value) === -1) {
+    if (enumOptions.findIndex(eo => eo.value === "") === -1) {
       // If this is a radio button group, then add the not specified option at the end...
       if (widget === "radio") {
-        enumOptions.push(notSpecifiedOption);
+        enumOptions.push(getDefaultOption());
       }
       // Otherwise, add the not specified option at the beginning (i.e. select)...
       else {
-        enumOptions.unshift(notSpecifiedOption);
+        enumOptions.unshift(getDefaultOption(`Select ${title}...`));
       }
     }
   }

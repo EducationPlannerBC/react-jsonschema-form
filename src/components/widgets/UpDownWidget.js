@@ -1,7 +1,7 @@
 import React, {PropTypes} from "react";
 
 import {rangeSpec} from "../../utils";
-import BaseInput from "./EPBCBaseInput";
+import BaseInput from "./BaseInput";
 
 function UpDownWidget(props) {
   return <BaseInput type="number" {...props} {...rangeSpec(props.schema)}/>;

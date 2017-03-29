@@ -1,36 +1,64 @@
-import React, {PropTypes} from "react";
+import React, {Component, PropTypes} from "react";
+import TextareaAutosize from 'react-textarea-autosize';
 
+class TextareaWidget extends Component {
+  static defaultProps = {
+    autofocus: false
+  };
 
-function TextareaWidget({
-  schema,
-  id,
-  placeholder,
-  value,
-  required,
-  disabled,
-  readonly,
-  autofocus,
-  ariaDescribedBy,
-  onChange
-}) {
-  return (
-    <textarea
-      id={id}
-      className="form-control"
-      value={typeof value === "undefined" ? "" : value}
-      placeholder={placeholder}
-      required={required}
-      disabled={disabled}
-      readOnly={readonly}
-      autoFocus={autofocus}
-      aria-describedby={ariaDescribedBy}
-      onChange={(event) => onChange(event.target.value)}/>
-  );
+  constructor(props) {
+    super(props);
+    const {value} = props;
+    this.state = { value: value };
+  }
+
+  onChange() {
+    const {onChange} = this.props;
+    return (event) => {
+        const value = event.target.value.length === 0 && this.props.required  ? null : event.target.value;
+        this.setState({ value: value });
+    };
+  }
+
+  onBlur() {
+    const {onChange} = this.props;
+    return (event) => {
+      const value = event.target.value.length === 0 && this.props.required  ? null : event.target.value;
+      this.setState({ value: value }, () => { 
+          onChange(value)
+      });
+    };
+  }
+
+  render() {
+    const {
+      schema,
+      id,
+      placeholder,
+      disabled,
+      readonly,
+      autofocus,
+      ariaDescribedBy,
+      onChange
+    } = this.props;    
+    const {
+      value
+    } = this.state;
+    return (
+      <TextareaAutosize
+        id={id}
+        className="form-control"
+        value={value ? value : ""}
+        placeholder={placeholder}
+        disabled={disabled}
+        readOnly={readonly}
+        autoFocus={autofocus}
+        aria-describedby={ariaDescribedBy}
+        onChange={this.onChange()}
+        onBlur={this.onBlur()}/>
+    );
+  }
 }
-
-TextareaWidget.defaultProps = {
-  autofocus: false
-};
 
 if (process.env.NODE_ENV !== "production") {
   TextareaWidget.propTypes = {

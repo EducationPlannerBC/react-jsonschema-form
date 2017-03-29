@@ -1,6 +1,6 @@
 import React, {PropTypes} from "react";
 
-import BaseInput from "./EPBCBaseInput";
+import BaseInput from "./BaseInput";
 
 
 function fromJSONDate(jsonDate) {

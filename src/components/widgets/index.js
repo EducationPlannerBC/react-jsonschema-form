@@ -4,41 +4,43 @@ import CheckboxWidget from "./CheckboxWidget";
 import CheckboxesWidget from "./CheckboxesWidget";
 import ConsentWidget from "./ConsentWidget";
 import ColorWidget from "./ColorWidget";
-import DateWidget from "./EPBCDateWidget";
+import DateWidget from "./DateWidget";
 import DateTimeWidget from "./DateTimeWidget";
 import DisplayWidget from "./DisplayWidget";
 import EmailWidget from "./EmailWidget";
 import FileWidget from "./FileWidget";
 import HiddenWidget from "./HiddenWidget";
+import MonthYearWidget from "./MonthYearWidget";
 import PasswordWidget from "./PasswordWidget";
 import RadioWidget from "./RadioWidget";
 import RangeWidget from "./RangeWidget";
-import SelectWidget from "./EPBCSelectWidget";
-import TextareaWidget from "./EPBCTextareaWidget";
+import SelectWidget from "./SelectWidget";
+import TextareaWidget from "./TextareaWidget";
 import TextWidget from "./TextWidget";
-import URLWidget from "./URLWidget";
 import UpDownWidget from "./UpDownWidget";
+import URLWidget from "./URLWidget";
 
 
 export default {
-  PasswordWidget,
-  RadioWidget,
-  UpDownWidget,
-  RangeWidget,
-  SelectWidget,
-  TextWidget,
-  DateWidget,
-  DateTimeWidget,
-  DisplayWidget,
   AltDateWidget,
   AltDateTimeWidget,
-  EmailWidget,
-  URLWidget,
-  TextareaWidget,
-  HiddenWidget,
-  ColorWidget,
-  FileWidget,
   CheckboxWidget,
   CheckboxesWidget,
-  ConsentWidget
+  ColorWidget,
+  ConsentWidget,
+  DateTimeWidget,
+  DateWidget,
+  DisplayWidget,
+  EmailWidget,
+  FileWidget,
+  HiddenWidget,
+  MonthYearWidget,
+  PasswordWidget,
+  RadioWidget,
+  RangeWidget,
+  SelectWidget,
+  TextareaWidget,
+  TextWidget,
+  UpDownWidget,
+  URLWidget,
 };

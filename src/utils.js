@@ -31,6 +31,7 @@ const widgetMap = {
     "date-time": "DateTimeWidget",
     "alt-date": "AltDateWidget",
     "alt-datetime": "AltDateTimeWidget",
+    "ym-date": "MonthYearWidget",
     color: "ColorWidget",
     file: "FileWidget",
   },
@@ -399,10 +400,10 @@ export function allowAdditionalItems(schema) {
   return isObject(schema.additionalItems);
 }
 
-export function getNotSpecifiedOption() {
+export function getDefaultOption(defaultOptionLabel) {
   return {
     value: "",
-    label: "(Not Specified)"
+    label: defaultOptionLabel || "(Not Specified)"
   };
 }
 
@@ -422,7 +423,6 @@ function findSchemaDefinition($ref, definitions = {}) {
   // No matching definition found, that's an error (bogus schema?)
   throw new Error(`Could not find a definition for ${$ref}.`);
 }
-
 export function retrieveSchema(schema, definitions = {}) {
   // No $ref attribute found, returning the original schema.
   if (!schema.hasOwnProperty("$ref")) {

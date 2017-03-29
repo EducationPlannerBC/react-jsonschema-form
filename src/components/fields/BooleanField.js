@@ -5,7 +5,7 @@ import {
   getWidget,
   getUiOptions,
   optionsList,
-  getNotSpecifiedOption,
+  getDefaultOption,
   getDefaultRegistry
 } from "../../utils";
 
@@ -33,7 +33,6 @@ function BooleanField(props) {
 
   // If an options-based widget is to be used (i.e. radio or select)...
   if (widget === "radio" || widget === "select") {
-    const notSpecifiedOption = getNotSpecifiedOption();
     /**
      * It is expected that if enumNames are defined, they are provided in the following order
      * (i.e. the enum value order is fixed for a particular widget type)
@@ -60,14 +59,14 @@ function BooleanField(props) {
       enumNames: schema.enumNames || ["Yes", "No"]
     });
     // If this list of options does not yet have a default option, add one...
-    if (enumOptions.findIndex(eo => eo.value === notSpecifiedOption.value) === -1) {
+    if (enumOptions.findIndex(eo => eo.value === "") === -1) {
       // If this is a radio button group, then add the not specified option at the end...
       if (widget === "radio") {
-        enumOptions.push(notSpecifiedOption);
+        enumOptions.push(getDefaultOption());
       }
       // Otherwise, add the not specified option at the beginning (i.e. select)...
       else {
-        enumOptions.unshift(notSpecifiedOption);
+        enumOptions.unshift(getDefaultOption(`Select ${title}...`));
       }
     }
   }
