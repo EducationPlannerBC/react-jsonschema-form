@@ -400,38 +400,11 @@ export function allowAdditionalItems(schema) {
   return isObject(schema.additionalItems);
 }
 
-export function getNotSpecifiedOption() {
-  return {
-    value: "",
-    label: "(Not Specified)"
-  };
-}
-
-export function pascalize(stringToPascalize) {
-  const pascalizedString = stringToPascalize.toLowerCase().replace(/\b[a-z](?=[a-z]{2})/g, function (letter) {
-    return letter.toUpperCase();
-  });
-
-  return pascalizedString;
-}
-
 export function getDefaultOption(defaultOptionLabel) {
   return {
     value: "",
-    label: "Select " + defaultOptionLabel + "..."
+    label: defaultOptionLabel || "(Not Specified)"
   };
-}
-
-export function addDefaultOptionIfRequired(enumOptions, defaultOptionType) {
-  let defaultOptionLabel = pascalize(defaultOptionType);
-
-  let defaultOption = getDefaultOption(defaultOptionLabel);
-
-  if (!!enumOptions[0] && enumOptions[0].value !== defaultOption.value) {
-    enumOptions.unshift(defaultOption);
-  }
-
-  return enumOptions;
 }
 
 export function optionsList(schema) {

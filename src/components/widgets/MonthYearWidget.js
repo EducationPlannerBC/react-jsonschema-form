@@ -1,11 +1,10 @@
 import React, { Component, PropTypes } from "react";
 import { 
   asNumber,
-  addDefaultOptionIfRequired,
+  optionsList,
   getDefaultOption,
   pad,
   parseDateString, 
-  pascalize,
   shouldRender,
   toDateString
  } from "../../utils";
@@ -25,12 +24,11 @@ const DateElement = (props) => {
     options = { enumOptions: configureYearOptions(type, range[0], range[1], widgetOptions.yearRange.sort) };
   }
   else if (type === "month") {
-    let enumOptions = widgetOptions.month.enum.map((value, index) => {
-      return {value: value, label: widgetOptions.month.enumNames[index]};
-    });
-
-    enumOptions = addDefaultOptionIfRequired(enumOptions, type);
-
+    let enumOptions = optionsList(widgetOptions.month);
+    // If this list of options does not yet have a default option, add one...
+    if (enumOptions.findIndex(eo => eo.value === "") === -1) {
+      enumOptions.unshift(getDefaultOption(`Month...`));
+    }
     options = { enumOptions };
   }
 
@@ -57,11 +55,8 @@ const isCompleteDate = (state) => {
 }
 
 const configureYearOptions = (type, start, stop, orderYearBy) => {
-  // Capitalize the first character of the date type (i.e. year, month, day, etc.)
-  const typeLabel = pascalize(type);
-
-  // Initialize the list of options with the default option (i.e. Year..., Month..., Day..., etc.)
-  let options = [{ value: -1, label: typeLabel + "..." }];
+  // Initialize the list of options with the default option (i.e. Year...)
+  let options = [{ value: -1, label: "Year..." }];
   // If getting  options for year, and they are to be sorted in descending order...
   if (type === "year" && orderYearBy.toLowerCase() === DESCENDING) {
     for (let i = stop; i >= start; i--) {
