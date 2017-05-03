@@ -48,7 +48,7 @@ class TextareaWidget extends Component {
       <TextareaAutosize
         id={id}
         className="form-control"
-        value={value ? value : ""}
+        value={value == null ? null : value}
         placeholder={placeholder}
         disabled={disabled}
         readOnly={readonly}
