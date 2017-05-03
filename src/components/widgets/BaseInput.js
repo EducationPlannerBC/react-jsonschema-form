@@ -25,9 +25,9 @@ class BaseInput extends Component {
   onBlur() {
     const {onChange} = this.props;
     return (event) => {
-      const value = event.target.value;
+      const value = event.target.value.trim();
       this.setState({ value: value }, () => {
-        onChange(value);
+        onChange(value || null);
       });
     };
   }

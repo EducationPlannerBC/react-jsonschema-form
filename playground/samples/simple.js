@@ -125,6 +125,16 @@ module.exports = {
           "Choice 2"
         ]
       },
+      "checkboxes": {
+        type: "array",
+          minItems: 2,
+            title: "A multiple choices list",
+              items: {
+          type: "string",
+          enum: ["foo", "bar", "fuzz", "qux"],
+        },
+        uniqueItems: true
+      }
     }
   },
   uiSchema: {
@@ -189,8 +199,11 @@ module.exports = {
       "ui:widget": "radio",
       "ui:help": "Help numberRadioEnum!"
     },
-    date: {
-      "ui:widget": "alt-datetime"
+    checkboxes: {
+      "ui:widget": "checkboxes",
+      "ui:options": {
+        inline: true
+      }
     }
   },
   formData: {
