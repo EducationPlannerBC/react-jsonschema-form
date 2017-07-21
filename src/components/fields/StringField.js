@@ -52,7 +52,7 @@ function StringField(props) {
     id={idSchema && idSchema.$id}
     label={title === undefined ? name : title}
     value={defaultFieldValue(formData, schema)}
-    onChange={(value) => onChange(value == null ? null : value)}
+    onChange={(value) => onChange((value == null || value === "") ? null : value)}
     required={required}
     disabled={disabled}
     readonly={readonly}
