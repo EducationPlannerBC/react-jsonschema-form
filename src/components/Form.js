@@ -7,7 +7,8 @@ import {
   toIdSchema,
   setState,
   getDefaultRegistry,
-  nullifyEmptyRequiredFields
+  nullifyEmptyRequiredFields,
+  deepEquals,
 } from "../utils";
 import validateFormData from "../validate";
 
@@ -52,7 +53,8 @@ export default class Form extends Component {
       formData,
       edit,
       errors,
-      errorSchema
+      errorSchema,
+      activeField: state.activeField,
     };
   }
 
@@ -70,45 +72,69 @@ export default class Form extends Component {
     const {showErrorList} = this.props;
 
     if (status !== "editing" && errors.length && showErrorList != false) {
-      return <ErrorList errors={errors}/>;
+      return <ErrorList errors={errors} />;
     }
     return null;
   }
 
   onChange = (formData, options={validate: false}) => {
     const mustValidate = !this.props.noValidate && (this.props.liveValidate || options.validate);
-    let state = {status: "editing", formData};
+    const isSubmitQueued = this.state.status === "submitQueued";
+    const state = { status: "editing", formData };
     if (mustValidate) {
-      const {errors, errorSchema} = this.validate(formData);
-      state = {...state, errors, errorSchema};
+      const { errors, errorSchema } = this.validate(formData);
+      state = { ...state, errors, errorSchema };
     }
     setState(this, state, () => {
       if (this.props.onChange) {
         this.props.onChange(this.state);
       }
+      // If we have a submit queued up, in the event that we had just previously entered the onSubmit handler, 
+      // but had to first blur a text-based input, that supports form submission upon pressing enter, in order
+      // to trigger any field validation to execute 
+      if (isSubmitQueued) {
+        this.onSubmit();
+      }
     });
-  };
+  }
 
   onSubmit = (event) => {
-    event.preventDefault();
-    this.setState({ status: "submitted" });
-
-    const focusedFormInput = document.activeElement;
-    // If there is a currently focused form input, blur it to trigger its validation
-    // before we check to see if the overall form is valid...
-    if (focusedFormInput != null) {
-      focusedFormInput.blur();
-      setTimeout(function () {
-        focusedFormInput.focus();
-        this.onInnerSubmit();
-      }.bind(this), 100);
+    if (event) {
+      event.preventDefault();
     }
-    else {
-      this.onInnerSubmit();
+    const { activeField: lastActiveField } = this.state;
+    const activeField = document.activeElement;
+    // If a text-based input, that supports form submission upon pressing enter, is currently focused, then
+    // programmatically blur it to trigger field validation, prior to continuing with full form submission...
+    if (activeField && activeField.nodeName.toLowerCase() === "input"
+      && ["text", "password"].includes(activeField.type)
+    ) {
+      // Save reference to the activeField on state, so that we can set focus back to it when we re-enter
+      // onSubmit in a moment
+      this.setState({ activeField, status: "submitQueued" }, () => {
+        activeField.blur();
+        // In case there doesn't happen to be an onBlur handler for the text-based input that we just
+        // blurred (NOTE: there really should be, since this is the convention we're used throughout
+        // the EPBC UI), then fallback to relying on a timeout-based method (i.e. within 1 second) for
+        // re-entering onSubmit...
+        setTimeout(() => {
+          // Only try submitting the form from here, if we have not already submitted the form 
+          // via onChange at the top, after blurring the text-based input...
+          if (this.state.status === "submitQueued") {
+            this.onSubmit();
+          }
+        }, 1000);
+      });
+      return;
     }
-  };
+    // If we had to blur an active field to trigger validation on the original submit attempt, then set
+    // focus back to it, then carry on with submitting the form...
+    if (lastActiveField) {
+      lastActiveField.focus();
+    }
+    // Remove the reference to the active field, since there's no longer any use for it
+    this.setState({ activeField: null, status: "submitted" });
 
-  onInnerSubmit = () => {
     if (!this.props.noValidate) {
       // Trigger any validation of custom fields/widgets that are subscribed
       if (this.props.formContext && this.props.formContext.validationHandlers) {
@@ -116,37 +142,43 @@ export default class Form extends Component {
           validateHandler();
         });
       }
+      // Convert any default, initial values corresponding to the 'Not Specified' option to null before
+      // before running validation
+      // (NOTE: We're directly modifying the formData on state, but we know what we're doing here)
+      nullifyEmptyRequiredFields(this.props.schema, this.props.uiSchema, this.state.formData);
 
-      let formData = Object.assign({}, this.state.formData);
-      // Convert any default, initial values corresponding to the Not Specified option to
-      // null before running validation
-      nullifyEmptyRequiredFields(this.props.schema, this.props.uiSchema, formData);
-
-      setState(this, { formData }, () => {
-        const {errors, errorSchema} = this.validate(this.state.formData, false, true);
-        if (Object.keys(errors).length > 0) {
-          setState(this, { errors, errorSchema }, () => {
-            if (this.props.onError) {
-              this.props.onError(errors);
-            } else {
-              console.error("Form validation failed", errors);
-            }
-          });
-          return;
+      const { errors, errorSchema } = this.validate(this.state.formData, false, true);
+      if (Object.keys(errors).length > 0) {
+        setState(this, { errors, errorSchema }, () => {
+          // If we just updated the formData on state, such that it is no longer equivalent to the formData
+          // on props, emit the updated state up through onChange, so that we can get the two back in sync...
+          // (NOTE: If we don't do this, then we may end up overwriting the new formData that we just modified
+          // modified on state with the formData on props after getStateFromProps executes from 
+          // componentWillReceiveProps)
+          if (this.props.onChange && !deepEquals(this.props.formData, this.state.formData)) {
+            this.props.onChange(this.state);
+          }
+          if (this.props.onError) {
+            this.props.onError(errors);
+          } else {
+            console.error("Form validation failed", errors);
+          }
+        });
+        return;
+      }
+      else {
+        if (this.props.onSubmit) {
+          this.props.onSubmit(this.state);
         }
-        this.onInnerInnerSubmit();
-      });
+        this.setState({ status: "initial", errors: [], errorSchema: {} });
+      }
     }
     else {
-      this.onInnerInnerSubmit();
+      if (this.props.onSubmit) {
+        this.props.onSubmit(this.state);
+      }
+      this.setState({ status: "initial", errors: [], errorSchema: {} });
     }
-  }
-
-  onInnerInnerSubmit = () => {
-    if (this.props.onSubmit) {
-      this.props.onSubmit(this.state);
-    }
-    this.setState({ status: "initial", errors: [], errorSchema: {} });
   }
 
   getRegistry() {
