@@ -32,19 +32,6 @@ class BaseInput extends Component {
     };
   }
 
-  // onKeyPress() {
-  //   const {onChange} = this.props;
-  //   return (event) => {
-  //     // If the enter key was pressed, process as a blur event...
-  //     if (event.which === 13) {
-  //       const value = event.target.value;
-  //       this.setState({ value: value }, () => {
-  //         onChange(value);
-  //       });
-  //     };
-  //   }
-  // }
-
   render() {
     // Note: since React 15.2.0 we can't forward unknown element attributes, so we
     // exclude the "options" and "schema" ones here.
