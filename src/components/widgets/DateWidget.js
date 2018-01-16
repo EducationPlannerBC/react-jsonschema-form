@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { shouldRender, parseDateString, toDateString, pad } from "../../utils";
 
 const NOT_SPECIFIED_DATE = "0000-01-01";
@@ -73,14 +74,14 @@ class DateWidget extends Component {
       },
       enableNow: false,
       enableClear: false,
-      
+
     }
   };
 
   constructor(props) {
     super(props);
 
-    // If this is the not specified date (0000-01-01), set it to the empty string so that parseDateString 
+    // If this is the not specified date (0000-01-01), set it to the empty string so that parseDateString
     // will set the date to an unset date state of { year: -1, month: -1, day: -1 }
     this.state = parseDateString(props.value === NOT_SPECIFIED_DATE ? "" : props.value, props.time);
   }
@@ -113,24 +114,24 @@ class DateWidget extends Component {
       // Check if the currently set day is within the new year and month
       if (this.state.day <= getDaysInMonth(newYearValue, this.state.month)) {
         nextState = { [property]: value };
-      } 
+      }
       else {
         // Else, deselect the day
         nextState = { [property]: value, day: -1 };
       }
-    } 
+    }
     // Otherwise, if the month has changed, and year and day is set...
     else if (property === "month" && this.state.year !== -1 && this.state.day !== -1) {
       let newMonthValue = value
       // Check if the currently set day is within the year and new month
       if (this.state.day <= getDaysInMonth(this.state.year, newMonthValue)) {
         nextState = { [property]: value };
-      } 
+      }
       else {
         // Else, deselect the day
         nextState = { [property]: value, day: -1 };
       }
-    } 
+    }
     // Otherwise, the date must have changed - nothing special here...
     else {
       nextState = { [property]: value };
@@ -169,7 +170,7 @@ class DateWidget extends Component {
     const {year, month, day, hour, minute, second} = this.state;
 
     // If the year and month are set, then calculate the max number of days,
-    // otherwise, set to days in the month to 31 
+    // otherwise, set to days in the month to 31
     let maxDays = year !== -1 && month !== -1 ? getDaysInMonth(year, month) : 31;
 
     const currentYear = new Date().getFullYear();

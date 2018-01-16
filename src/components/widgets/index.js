@@ -1,5 +1,6 @@
 import AltDateWidget from "./AltDateWidget";
 import AltDateTimeWidget from "./AltDateTimeWidget";
+import BaseInput from "./BaseInput";
 import CheckboxWidget from "./CheckboxWidget";
 import CheckboxesWidget from "./CheckboxesWidget";
 import ConsentWidget from "./ConsentWidget";
@@ -22,6 +23,7 @@ import URLWidget from "./URLWidget";
 
 
 export default {
+  BaseInput,
   AltDateWidget,
   AltDateTimeWidget,
   CheckboxWidget,

@@ -2,14 +2,29 @@ import toPath from "lodash.topath";
 import get from "lodash.get";
 import {validate as jsonValidate} from "jsonschema";
 
-import {isObject, mergeObjects} from "./utils";
+import Ajv from "ajv";
+const ajv = new Ajv({
+  errorDataPath: "property",
+  allErrors: true,
+});
+// add custom formats
+ajv.addFormat(
+  "data-url",
+  /^data:([a-z]+\/[a-z0-9-+.]+)?;name=(.*);base64,(.*)$/
+);
+ajv.addFormat(
+  "color",
+  /^(#?([0-9A-Fa-f]{3}){1,2}\b|aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow|(rgb\(\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*,\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*,\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*\))|(rgb\(\s*(\d?\d%|100%)+\s*,\s*(\d?\d%|100%)+\s*,\s*(\d?\d%|100%)+\s*\)))$/
+);
+
+import { isObject, mergeObjects } from "./utils";
 
 function toErrorSchema(errors) {
-  // Transforms a jsonschema validation errors list:
+  // Transforms a ajv validation errors list:
   // [
-  //   {property: "instance.level1.level2[2].level3", message: "err a"},
-  //   {property: "instance.level1.level2[2].level3", message: "err b"},
-  //   {property: "instance.level1.level2[4].level3", message: "err b"},
+  //   {property: ".level1.level2[2].level3", message: "err a"},
+  //   {property: ".level1.level2[2].level3", message: "err b"},
+  //   {property: ".level1.level2[4].level3", message: "err b"},
   // ]
   // Into an error tree:
   // {
@@ -24,10 +39,17 @@ function toErrorSchema(errors) {
     return {};
   }
   return errors.reduce((errorSchema, error) => {
-    const {property, message} = error;
+    const { property, message } = error;
     const path = toPath(property);
     let parent = errorSchema;
-    for (const segment of path.slice(1)) {
+
+    // If the property is at the root (.level1) then toPath creates
+    // an empty array element at the first index. Remove it.
+    if (path.length > 0 && path[0] === "") {
+      path.splice(0, 1);
+    }
+
+    for (const segment of path.slice(0)) {
       if (!(segment in parent)) {
         parent[segment] = {};
       }
@@ -49,11 +71,13 @@ export function toErrorList(errorSchema, fieldName = "root") {
   // XXX: We should transform fieldName as a full field path string.
   let errorList = [];
   if ("__errors" in errorSchema) {
-    errorList = errorList.concat(errorSchema.__errors.map(stack => {
-      return {
-        stack: `${fieldName}: ${stack}`
-      };
-    }));
+    errorList = errorList.concat(
+      errorSchema.__errors.map(stack => {
+        return {
+          stack: `${fieldName}: ${stack}`,
+        };
+      })
+    );
   }
   return Object.keys(errorSchema).reduce((acc, key) => {
     if (key !== "__errors") {
@@ -75,7 +99,12 @@ function createErrorHandler(formData) {
   };
   if (isObject(formData)) {
     return Object.keys(formData).reduce((acc, key) => {
-      return {...acc, [key]: createErrorHandler(formData[key])};
+      return { ...acc, [key]: createErrorHandler(formData[key]) };
+    }, handler);
+  }
+  if (Array.isArray(formData)) {
+    return formData.reduce((acc, value, key) => {
+      return { ...acc, [key]: createErrorHandler(value) };
     }, handler);
   }
   return handler;
@@ -86,10 +115,36 @@ function unwrapErrorHandler(errorHandler) {
     if (key === "addError") {
       return acc;
     } else if (key === "__errors") {
-      return {...acc, [key]: errorHandler[key]};
+      return { ...acc, [key]: errorHandler[key] };
     }
-    return {...acc, [key]: unwrapErrorHandler(errorHandler[key])};
+    return { ...acc, [key]: unwrapErrorHandler(errorHandler[key]) };
   }, {});
+}
+
+
+
+/**
+ * Transforming the error output from ajv to format used by jsonschema.
+ * At some point, components should be updated to support ajv.
+ */
+function transformAjvErrors(errors = []) {
+  if (errors === null) {
+    return [];
+  }
+
+  return errors.map(e => {
+    const { dataPath, keyword, message, params } = e;
+    let property = `${dataPath}`;
+
+    // put data in expected format
+    return {
+      name: keyword,
+      property,
+      message,
+      params, // specific to ajv
+      stack: `${property} ${message}`.trim(),
+    };
+  });
 }
 
 function comparisonConditionIsSatisfied(validatingPropertyValue, comparisonPropertyValue, conditionType) {
@@ -97,7 +152,7 @@ function comparisonConditionIsSatisfied(validatingPropertyValue, comparisonPrope
     return false;
   }
   // If this is a string, and it hasn't yet been specified, defer display of an error
-  // message until a value has been provided...  
+  // message until a value has been provided...
   if (typeof validatingPropertyValue === "string" && validatingPropertyValue.length === 0) {
     return false;
   }
@@ -123,7 +178,7 @@ function comparisonConditionIsSatisfied(validatingPropertyValue, comparisonPrope
 function formatJsonValidateResult(jsonValidateResult){
   const {instance, errors, schema} = jsonValidateResult;
   const formData = instance;
-  
+
   const extValidationErrors = [];
 
   const evaluateExtendedValidations = (schema, formData, formDataPath) => {
@@ -139,7 +194,7 @@ function formatJsonValidateResult(jsonValidateResult){
     }
     else if (formData && typeof formData === "object") {
       const keys = Object.keys(formData);
-      const extValidations = schema["ext:validations"];      
+      const extValidations = schema["ext:validations"];
       if (extValidations) {
         const extValidationKeys = Object.keys(extValidations);
         for (let i = 0; i < extValidationKeys.length; i++) {
@@ -151,7 +206,7 @@ function formatJsonValidateResult(jsonValidateResult){
             const comparisonValue = extValidations[validatingPropertyName].value;
             if (comparisonConditionIsSatisfied(validatingPropertyValue, comparisonValue, comparisonCondition)) {
               const newExtValidationError = {};
-              const validationMessage = extValidations[validatingPropertyName].message ? extValidations[validatingPropertyName].message 
+              const validationMessage = extValidations[validatingPropertyName].message ? extValidations[validatingPropertyName].message
                 : validatingPropertyName + " must be " + comparisonCondition + " to " + comparisonValue;
               newExtValidationError.argument = comparisonValue;
               newExtValidationError.instance = validatingPropertyValue;
@@ -160,7 +215,7 @@ function formatJsonValidateResult(jsonValidateResult){
               newExtValidationError.property = formDataPath + "." + validatingPropertyName;
               newExtValidationError.schema = schema.properties[validatingPropertyName];
               newExtValidationError.stack = schema.properties[validatingPropertyName].title + ": " + validationMessage + ".";
-              
+
               extValidationErrors.push(newExtValidationError);
             }
           }
@@ -172,7 +227,7 @@ function formatJsonValidateResult(jsonValidateResult){
             const comparisonPropertyValue = formData[comparisonPropertyName];
             if (comparisonConditionIsSatisfied(validatingPropertyValue, comparisonPropertyValue, comparisonCondition)) {
               const newExtValidationError = {};
-              const validationMessage = extValidations[validatingPropertyName].message ? extValidations[validatingPropertyName].message 
+              const validationMessage = extValidations[validatingPropertyName].message ? extValidations[validatingPropertyName].message
                 : validatingPropertyName + " must be " + comparisonCondition + " to " + comparisonPropertyName + " (" + comparisonPropertyValue + ")";
               newExtValidationError.argument = comparisonPropertyName + " (" + comparisonPropertyValue + ")";
               newExtValidationError.instance = validatingPropertyValue;
@@ -185,13 +240,13 @@ function formatJsonValidateResult(jsonValidateResult){
               extValidationErrors.push(newExtValidationError);
             }
           }
-        } 
+        }
       }
       for (let i = 0; i < keys.length; i++) {
         const formDataPropertyName = keys[i];
         const formDataPropertyValue = formData[formDataPropertyName];
         // If this property is an object, the recursively call evaluateExtendedValidations...
-        if (typeof formDataPropertyValue === "object") {
+        if (typeof formDataPropertyValue === "object" && schema.properties) {
           evaluateExtendedValidations(schema.properties[formDataPropertyName], formData[formDataPropertyName], formDataPath + "." + formDataPropertyName);
         }
       }
@@ -207,11 +262,11 @@ function formatJsonValidateResult(jsonValidateResult){
     const propPath = toPath(error.property);
     // The prop name is at the end of the path
     const propName = propPath.pop();
-    // Note that we're getting the path to the parent schema by popping the 
+    // Note that we're getting the path to the parent schema by popping the
     // property off the end of the path
     const propParentPath = propPath;
     // If the path starts with instance, then remove it, since we're beginning
-    // from the root schema... 
+    // from the root schema...
     if (propParentPath[0] === "instance") {
       propParentPath.shift();
     }
@@ -230,7 +285,7 @@ function formatJsonValidateResult(jsonValidateResult){
     // instead...
     if (["minLength", "enum"].indexOf(error.name) > -1 && !error["instance"]) {
       const { propName, propParentSchema } = getPropNameAndParentSchema(error);
-      
+
       return false;
     }
     // Otherwise, if this is a type validation error and the value is null,
@@ -253,7 +308,7 @@ function formatJsonValidateResult(jsonValidateResult){
         const propPath = toPath(error.property);
         if (propPath[0] === "instance") {
           propPath.shift();
-        }      
+        }
         const propValue = get(formData, propPath);
         // If the type error is for a required field currently set to the empty string,
         // then suppress the error since this corresponds to the initialized (Not Specified)
@@ -266,7 +321,7 @@ function formatJsonValidateResult(jsonValidateResult){
     }
     return true;
   }).map((error) => {
-    // If this is a type error for a required field with value set to null, 
+    // If this is a type error for a required field with value set to null,
     // then re-frame it as a 'Field is required' error
     if(error.name === "type"){
       const { propName, propParentSchema } = getPropNameAndParentSchema(error);
@@ -276,16 +331,16 @@ function formatJsonValidateResult(jsonValidateResult){
       }
     }
     // Otherwise, if this is a required property error for an object, then
-    // re-frame the validation error as a 'Field is required' 
+    // re-frame the validation error as a 'Field is required'
     // error for the specified property...
-    else if (error.name === "required") {
+    else if (error.name === "required" && error.schema.properties[error.argument]) {
       error.property += "." + error.argument;
       error.message = error.schema.properties[error.argument].title + " is required";
       error.schema = error.schema.properties[error.argument];
     }
     // If custom validation messages are defined for this property,
     // and a custom validation message exists for this particular
-    // validation error, then set it in place of the default 
+    // validation error, then set it in place of the default
     // validation message coming out of the jsonschema validator...
     if (error.schema.errors && error.schema.errors[error.name]) {
       error.message = error.schema.errors[error.name];
@@ -305,17 +360,33 @@ function formatJsonValidateResult(jsonValidateResult){
   });
 }
 
+
 /**
  * This function processes the formData with a user `validate` contributed
  * function, which receives the form data and an `errorHandler` object that
  * will be used to add custom validation errors for each field.
  */
-export default function validateFormData(formData, schema, customValidate, isSubmit) {
-  const {errors} = formatJsonValidateResult(jsonValidate(formData, schema));
+export default function validateFormData(
+  formData,
+  schema,
+  customValidate,
+  transformErrors
+  , isSubmit
+) {
+  ajv.validate(schema, formData);
+
+  let errors = transformAjvErrors(ajv.errors);
+
+  if (typeof transformErrors === "function") {
+    errors = transformErrors(errors);
+  }
+
+  errors = Object.assign({}, errors, formatJsonValidateResult(jsonValidate(formData, schema)));
+
   const errorSchema = toErrorSchema(errors);
 
   if (typeof customValidate !== "function") {
-    return {errors, errorSchema};
+    return { errors, errorSchema };
   }
 
   const errorHandler = customValidate(formData, createErrorHandler(formData), isSubmit);
@@ -326,5 +397,5 @@ export default function validateFormData(formData, schema, customValidate, isSub
   // properties.
   const newErrors = toErrorList(newErrorSchema);
 
-  return {errors: newErrors, errorSchema: newErrorSchema};
+  return { errors: newErrors, errorSchema: newErrorSchema };
 }

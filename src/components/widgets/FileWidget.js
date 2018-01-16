@@ -1,4 +1,5 @@
-import React, {Component, PropTypes} from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 import {dataURItoBlob, shouldRender, setState} from "../../utils";
 
 function addNameToDataURL(dataURL, name) {
@@ -76,7 +77,7 @@ class FileWidget extends Component {
   onChange = (event) => {
     const {multiple, onChange} = this.props;
     processFiles(event.target.files)
-      .then((filesInfo) => {
+      .then(filesInfo => {
         const state = {
           values: filesInfo.map(fileInfo => fileInfo.dataURL),
           filesInfo
@@ -98,7 +99,7 @@ class FileWidget extends Component {
       <div>
         <p>
           <input
-            ref={ref => this.inputRef = ref}
+            ref={ref => (this.inputRef = ref)}
             id={id}
             type="file"
             disabled={readonly || disabled}

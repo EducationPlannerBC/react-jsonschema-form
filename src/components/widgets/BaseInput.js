@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 class BaseInput extends Component {
   static defaultProps = {
@@ -23,14 +24,19 @@ class BaseInput extends Component {
   }
 
   onBlur() {
-    const {onChange} = this.props;
+    const {onBlur, onChange, options, ...inputProps} = this.props;
     return (event) => {
-      const value = event.target.value.trim();
+      let value = event.target.value.trim();
+
+      value = value === "" ? options.emptyValue : value;
+
       this.setState({ value: value }, () => {
-        onChange(value || null);
+        (onBlur && onBlur(inputProps.id, value || null));
+        (onChange && onChange(value || null));
       });
     };
   }
+
 
   render() {
     // Note: since React 15.2.0 we can't forward unknown element attributes, so we
@@ -38,7 +44,10 @@ class BaseInput extends Component {
     const {
       required,
       readonly,
+      disabled,
       autofocus,
+      onBlur,
+      onFocus,
       ariaDescribedBy,
       onChange,
       options,  // eslint-disable-line
@@ -50,18 +59,24 @@ class BaseInput extends Component {
     const {
       value
     } = this.state;
+
+    inputProps.type = options.inputType || inputProps.type || "text";
+
     const maxLength = schema.maxLength ? schema.maxLength : null;
     return (
       <input
         {...inputProps}
         className="form-control"
         readOnly={readonly}
+        disabled={disabled}
         autoFocus={autofocus}
         aria-describedby={ariaDescribedBy}
         maxLength={maxLength}
         value={value == null ? "" : value}
         onChange={this.onChange()}
-        onBlur={this.onBlur()} />
+        onBlur={this.onBlur()}
+        onFocus={onFocus && (event => onFocus(inputProps.id, event.target.value))}
+        />
     );
   }
 }
@@ -77,6 +92,8 @@ if (process.env.NODE_ENV !== "production") {
     autofocus: PropTypes.bool,
     ariaDescribedBy: PropTypes.string,
     onChange: PropTypes.func,
+    onBlur: PropTypes.func,
+    onFocus: PropTypes.func,
   };
 }
 

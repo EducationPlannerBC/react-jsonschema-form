@@ -1,19 +1,14 @@
-import React, {PropTypes} from "react";
-
-import BaseInput from "./BaseInput";
+import React from "react";
+import PropTypes from "prop-types";
 
 function TextWidget(props) {
-  return <BaseInput {...props}/>;
+  const { BaseInput } = props.registry.widgets;
+  return <BaseInput {...props} />;
 }
 
 if (process.env.NODE_ENV !== "production") {
   TextWidget.propTypes = {
-    value: PropTypes.oneOfType([
-      React.PropTypes.string,
-      React.PropTypes.number,
-    ]),
-    maxLength: PropTypes.number,
-    ariaDescribedBy: PropTypes.string,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   };
 }
 

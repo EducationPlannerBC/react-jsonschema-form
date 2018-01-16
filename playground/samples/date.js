@@ -5,20 +5,20 @@ module.exports = {
     properties: {
       native: {
         title: "Native",
-        description: "May not work on some browsers, notably Firefox Desktop and IE.",
+        description:
+          "May not work on some browsers, notably Firefox Desktop and IE.",
         type: "object",
         required: ["date"],
         properties: {
-          "datetime": {
+          datetime: {
             type: "string",
-            format: "date-time"
+            format: "date-time",
           },
-          "date": {
-            title: "date",
+          date: {
             type: "string",
-            format: "date"
-          }
-        }
+            format: "date",
+          },
+        },
       },
       alternative: {
         title: "Alternative",
@@ -27,13 +27,13 @@ module.exports = {
         properties: {
           "alt-datetime": {
             type: "string",
-            format: "date-time"
+            format: "date-time",
           },
           "alt-date": {
             type: "string",
-            format: "date"
-          }
-        }
+            format: "date",
+          },
+        },
       },
       monthYear: {
         title: "Month Year Widget",
@@ -56,8 +56,8 @@ module.exports = {
             "title": "Most recent term  attended or applied for:"
           }
         }
-      }
-    }
+      },
+    },
   },
   uiSchema: {
     native: {
@@ -77,11 +77,11 @@ module.exports = {
     },
     alternative: {
       "alt-datetime": {
-        "ui:widget": "alt-datetime"
+        "ui:widget": "alt-datetime",
       },
       "alt-date": {
-        "ui:widget": "alt-date"
-      }
+        "ui:widget": "alt-date",
+      },
     },
     monthYear: {
       "PrevAttendDate": {
@@ -134,7 +134,7 @@ module.exports = {
           },
         }
       }
-    }
+    },
   },
   formData: {
     native: {

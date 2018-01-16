@@ -1,19 +1,16 @@
-import React, {PropTypes} from "react";
+import React from "react";
+import PropTypes from "prop-types";
 
-import {rangeSpec} from "../../utils";
-import BaseInput from "./BaseInput";
+import { rangeSpec } from "../../utils";
 
 function UpDownWidget(props) {
-  return <BaseInput type="number" {...props} {...rangeSpec(props.schema)}/>;
+  const { registry: { widgets: { BaseInput } } } = props;
+  return <BaseInput type="number" {...props} {...rangeSpec(props.schema)} />;
 }
 
 if (process.env.NODE_ENV !== "production") {
   UpDownWidget.propTypes = {
-    value: PropTypes.oneOfType([
-      PropTypes.number,
-      PropTypes.string,
-    ]),
-    ariaDescribedBy: PropTypes.string,
+    value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   };
 }
 

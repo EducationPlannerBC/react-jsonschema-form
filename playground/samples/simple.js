@@ -15,7 +15,7 @@ module.exports = {
       },
       age: {
         type: "integer",
-        title: "Age"
+        title: "Age",
       },
       bio: {
         type: "string",
@@ -24,7 +24,7 @@ module.exports = {
       password: {
         type: "string",
         title: "Password",
-        minLength: 3
+        minLength: 3,
       },
       "booleanRadio": {
         "type": "boolean",
@@ -134,16 +134,24 @@ module.exports = {
           enum: ["foo", "bar", "fuzz", "qux"],
         },
         uniqueItems: true
-      }
-    }
+      },
+      telephone: {
+        type: "string",
+        title: "Telephone",
+        minLength: 10,
+      },
+    },
   },
   uiSchema: {
     firstName: {
       "ui:autofocus": true,
+      "ui:emptyValue": "",
       "ui:help": "Help!"
     },
     age: {
       "ui:widget": "updown",
+      "ui:title": "Age of person",
+      "ui:description": "(earthian year)",
       "ui:help": "Help, I'm getting old!"
     },
     bio: {
@@ -152,7 +160,7 @@ module.exports = {
     },
     password: {
       "ui:widget": "password",
-      "ui:help": "Hint: Make it strong!"
+      "ui:help": "Hint: Make it strong!",
     },
     booleanRadio: {
       "ui:options": {
@@ -204,7 +212,15 @@ module.exports = {
       "ui:options": {
         inline: true
       }
-    }
+    },
+    date: {
+      "ui:widget": "alt-datetime",
+    },
+    telephone: {
+      "ui:options": {
+        inputType: "tel",
+      },
+    },
   },
   formData: {
     firstName: null,
@@ -214,5 +230,5 @@ module.exports = {
     password: "noneed",
     "booleanRadio": null,
     "booleanConsent": null
-  }
+  },
 };

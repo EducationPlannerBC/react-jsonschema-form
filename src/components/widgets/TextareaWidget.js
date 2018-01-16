@@ -1,75 +1,62 @@
-import React, {Component, PropTypes} from "react";
-import TextareaAutosize from 'react-textarea-autosize';
+import React from "react";
+import PropTypes from "prop-types";
 
-class TextareaWidget extends Component {
-  static defaultProps = {
-    autofocus: false
+function TextareaWidget(props) {
+  const {
+    id,
+    options,
+    placeholder,
+    value,
+    required,
+    disabled,
+    readonly,
+    autofocus,
+    onChange,
+    onBlur,
+    onFocus,
+  } = props;
+  const _onChange = ({ target: { value } }) => {
+    return onChange(value === "" ? options.emptyValue : value);
   };
-
-  constructor(props) {
-    super(props);
-    const {value} = props;
-    this.state = { value: value };
-  }
-
-  onChange() {
-    const {onChange} = this.props;
-    return (event) => {
-        const value = event.target.value;
-        this.setState({ value: value });
-    };
-  }
-
-  onBlur() {
-    const {onChange} = this.props;
-    return (event) => {
-      const value = event.target.value.trim();
-      this.setState({ value: value }, () => { 
-          onChange(value || null)
-      });
-    };
-  }
-
-  render() {
-    const {
-      schema,
-      id,
-      placeholder,
-      disabled,
-      readonly,
-      autofocus,
-      ariaDescribedBy,
-      onChange
-    } = this.props;    
-    const {
-      value
-    } = this.state;
-    return (
-      <TextareaAutosize
-        id={id}
-        className="form-control"
-        value={value == null ? null : value}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readonly}
-        autoFocus={autofocus}
-        aria-describedby={ariaDescribedBy}
-        onChange={this.onChange()}
-        onBlur={this.onBlur()}/>
-    );
-  }
+  return (
+    <textarea
+      id={id}
+      className="form-control"
+      value={typeof value === "undefined" ? "" : value}
+      placeholder={placeholder}
+      required={required}
+      disabled={disabled}
+      readOnly={readonly}
+      autoFocus={autofocus}
+      rows={options.rows}
+      onBlur={onBlur && (event => onBlur(id, event.target.value))}
+      onFocus={onFocus && (event => onFocus(id, event.target.value))}
+      onChange={_onChange}
+    />
+  );
 }
+
+TextareaWidget.defaultProps = {
+  autofocus: false,
+  options: {},
+};
 
 if (process.env.NODE_ENV !== "production") {
   TextareaWidget.propTypes = {
     schema: PropTypes.object.isRequired,
     id: PropTypes.string.isRequired,
     placeholder: PropTypes.string,
+    options: PropTypes.shape({
+      rows: PropTypes.number,
+    }),
     value: PropTypes.string,
     required: PropTypes.bool,
+    disabled: PropTypes.bool,
+    readonly: PropTypes.bool,
     autofocus: PropTypes.bool,
-    ariaDescribedBy: PropTypes.string,
     onChange: PropTypes.func,
+    onBlur: PropTypes.func,
+    onFocus: PropTypes.func,
   };
 }
 

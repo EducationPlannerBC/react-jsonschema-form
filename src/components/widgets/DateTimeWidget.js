@@ -1,27 +1,49 @@
-import React, {PropTypes} from "react";
+import React from "react";
+import PropTypes from "prop-types";
+import { pad } from "../../utils";
 
-import BaseInput from "./BaseInput";
+//import BaseInput from "./BaseInput";
 
+export function utcToLocal(jsonDate) {
+  if (!jsonDate) {
+    return "";
+  }
 
-function fromJSONDate(jsonDate) {
-  return jsonDate ? jsonDate.slice(0, 19) : "";
+  // required format of `"yyyy-MM-ddThh:mm" followed by optional ":ss" or ":ss.SSS"
+  // https://html.spec.whatwg.org/multipage/input.html#local-date-and-time-state-(type%3Ddatetime-local)
+  // > should be a _valid local date and time string_ (not GMT)
+
+  // Note - date constructor passed local ISO-8601 does not correctly
+  // change time to UTC in node pre-8
+  const date = new Date(jsonDate);
+
+  const yyyy = pad(date.getFullYear(), 4);
+  const MM = pad(date.getMonth() + 1, 2);
+  const dd = pad(date.getDate(), 2);
+  const hh = pad(date.getHours(), 2);
+  const mm = pad(date.getMinutes(), 2);
+  const ss = pad(date.getSeconds(), 2);
+  const SSS = pad(date.getMilliseconds(), 3);
+
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}:${ss}.${SSS}`;
 }
 
-function toJSONDate(dateString) {
+export function localToUTC(dateString) {
   if (dateString) {
     return new Date(dateString).toJSON();
   }
 }
 
 function DateTimeWidget(props) {
-  const {value, ariaDescribedBy, onChange} = props;
+  const { value, ariaDescribedBy, onChange, registry: { widgets: { BaseInput } } } = props;
   return (
     <BaseInput
       type="datetime-local"
       {...props}
-      value={fromJSONDate(value)}
+      value={utcToLocal(value)}
       ariaDescribedBy={ariaDescribedBy}
-      onChange={(value) => onChange(toJSONDate(value))}/>
+      onChange={value => onChange(localToUTC(value))}
+    />
   );
 }
 

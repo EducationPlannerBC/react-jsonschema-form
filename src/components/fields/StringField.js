@@ -1,12 +1,14 @@
-import React, {PropTypes} from "react";
+import React from "react";
+import PropTypes from "prop-types";
 
 import {
   defaultFieldValue,
   getWidget,
   getUiOptions,
+  isSelect,
   optionsList,
   getDefaultOption,
-  getDefaultRegistry
+  getDefaultRegistry,
 } from "../../utils";
 
 function StringField(props) {
@@ -21,14 +23,18 @@ function StringField(props) {
     readonly,
     autofocus,
     ariaDescribedBy,
-    registry,
-    onChange
+    onChange,
+    onBlur,
+    onFocus,
+    registry = getDefaultRegistry(),
   } = props;
   const {title, format} = schema;
   const {widgets, formContext} = registry;
-  let enumOptions = Array.isArray(schema.enum) && optionsList(schema);
+  let enumOptions = isSelect(schema) && optionsList(schema);
   const defaultWidget = format || (enumOptions ? "select" : "text");
-  const {widget=defaultWidget, placeholder="", ...options} = getUiOptions(uiSchema);
+  const { widget = defaultWidget, placeholder = "", ...options } = getUiOptions(
+    uiSchema
+  );
   const Widget = getWidget(schema, widget, widgets);
 
   // If this field consists of one or more options to be selected...
@@ -51,8 +57,10 @@ function StringField(props) {
     schema={schema}
     id={idSchema && idSchema.$id}
     label={title === undefined ? name : title}
-    value={defaultFieldValue(formData, schema)}
+    value={formData}
     onChange={(value) => onChange((value == null || value === "") ? null : value)}
+    onBlur={onBlur}
+    onFocus={onFocus}
     required={required}
     disabled={disabled}
     readonly={readonly}
@@ -69,15 +77,16 @@ if (process.env.NODE_ENV !== "production") {
     uiSchema: PropTypes.object.isRequired,
     idSchema: PropTypes.object,
     onChange: PropTypes.func.isRequired,
+    onBlur: PropTypes.func,
+    onFocus: PropTypes.func,
     formData: PropTypes.oneOfType([
       React.PropTypes.string,
       React.PropTypes.number,
     ]),
     registry: PropTypes.shape({
-      widgets: PropTypes.objectOf(PropTypes.oneOfType([
-        PropTypes.func,
-        PropTypes.object,
-      ])).isRequired,
+      widgets: PropTypes.objectOf(
+        PropTypes.oneOfType([PropTypes.func, PropTypes.object])
+      ).isRequired,
       fields: PropTypes.objectOf(PropTypes.func).isRequired,
       definitions: PropTypes.object.isRequired,
       formContext: PropTypes.object.isRequired,
@@ -93,7 +102,6 @@ if (process.env.NODE_ENV !== "production") {
 
 StringField.defaultProps = {
   uiSchema: {},
-  registry: getDefaultRegistry(),
   disabled: false,
   readonly: false,
   autofocus: false,

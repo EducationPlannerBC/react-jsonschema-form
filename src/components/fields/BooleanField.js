@@ -1,4 +1,5 @@
-import React, { PropTypes } from "react";
+import React from "react";
+import PropTypes from "prop-types";
 
 import {
   defaultFieldValue,
@@ -16,7 +17,7 @@ function BooleanField(props) {
     uiSchema,
     idSchema,
     formData,
-    registry,
+    registry = getDefaultRegistry(),
     required,
     disabled,
     readonly,
@@ -36,24 +37,24 @@ function BooleanField(props) {
     /**
      * It is expected that if enumNames are defined, they are provided in the following order
      * (i.e. the enum value order is fixed for a particular widget type)
-     * 
-     * radio: 
+     *
+     * radio:
      * ======
      * enumNames: {
      *  "true option label",
      *  "false option label",
      *  "optional 'Not Specified' label"
      * }
-     * 
-     * select: 
+     *
+     * select:
      * =======
      * enumNames: {
      *  "optional 'Not Specified' label"
      *  "true option label",
      *  "false option label"
      * }
-     * 
-     */     
+     *
+     */
     enumOptions = optionsList({
       enum: (!schema.enumNames || schema.enumNames.length === 2) ? [true, false] : (widget === "radio" ? [true, false, ""] : ["", true, false]),
       enumNames: schema.enumNames || ["Yes", "No"]
@@ -78,7 +79,7 @@ function BooleanField(props) {
     onChange={(value) => onChange((typeof value !== "boolean") ? null : value)}
     label={title === undefined ? name : title}
     // Ensure we resolve the consent field to a boolean value, since it is truly expecting
-    // a boolean formData type (i.e. versus the other boolean widgets that support a 
+    // a boolean formData type (i.e. versus the other boolean widgets that support a
     // Not Specified option that is represented by the empty string)
     value={defaultFieldValue(widget === "consent" ? !!formData : formData, schema)}
     required={required}
@@ -116,7 +117,6 @@ if (process.env.NODE_ENV !== "production") {
 
 BooleanField.defaultProps = {
   uiSchema: {},
-  registry: getDefaultRegistry(),
   disabled: false,
   readonly: false,
   autofocus: false,

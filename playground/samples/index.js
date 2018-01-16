@@ -12,6 +12,11 @@ import date from "./date";
 import validation from "./validation";
 import files from "./files";
 import single from "./single";
+import customArray from "./customArray";
+import customObject from "./customObject";
+import alternatives from "./alternatives";
+import propertyDependencies from "./propertyDependencies";
+import schemaDependencies from "./schemaDependencies";
 
 export const samples = {
   Simple: simple,
@@ -27,5 +32,10 @@ export const samples = {
   "Date & time": date,
   Validation: validation,
   Files: files,
-  Single: single
+  Single: single,
+  "Custom Array": customArray,
+  "Custom Object": customObject,
+  Alternatives: alternatives,
+  "Property dependencies": propertyDependencies,
+  "Schema dependencies": schemaDependencies,
 };

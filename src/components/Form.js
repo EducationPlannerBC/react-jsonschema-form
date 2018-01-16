@@ -1,8 +1,10 @@
-import React, {Component, PropTypes} from "react";
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
-import ErrorList from "./ErrorList";
+import { default as DefaultErrorList } from "./ErrorList";
 import {
   getDefaultFormState,
+  retrieveSchema,
   shouldRender,
   toIdSchema,
   setState,
@@ -12,14 +14,15 @@ import {
 } from "../utils";
 import validateFormData from "../validate";
 
-
 export default class Form extends Component {
   static defaultProps = {
     uiSchema: {},
     noValidate: false,
     liveValidate: false,
     safeRenderCompletion: false,
-  }
+    noHtml5Validate: false,
+    ErrorList: DefaultErrorList,
+  };
 
   constructor(props) {
     super(props);
@@ -37,16 +40,23 @@ export default class Form extends Component {
     const edit = typeof props.formData !== "undefined";
     const liveValidate = props.liveValidate || this.props.liveValidate;
     const mustValidate = edit && !props.noValidate && liveValidate;
-    const {definitions} = schema;
+    const { definitions } = schema;
     const formData = getDefaultFormState(schema, props.formData, definitions, initialize);
-    const {errors, errorSchema} = mustValidate ?
-      this.validate(formData, schema) : {
-        errors: state.errors || [],
-        errorSchema: state.errorSchema || {}
-      };
-    const idSchema = toIdSchema(schema, uiSchema["ui:rootFieldId"], definitions);
+    const retrievedSchema = retrieveSchema(schema, definitions, formData);
+
+    const { errors, errorSchema } = mustValidate
+      ? this.validate(formData, schema)
+      : {
+          errors: state.errors || [],
+          errorSchema: state.errorSchema || {},
+        };
+    const idSchema = toIdSchema(
+      retrievedSchema,
+      uiSchema["ui:rootFieldId"],
+      definitions,
+      formData
+    );
     return {
-      status: "initial",
       schema,
       uiSchema,
       idSchema,
@@ -63,24 +73,39 @@ export default class Form extends Component {
   }
 
   validate(formData, schema, isSubmit) {
-    const {validate} = this.props;
-    return validateFormData(formData, schema || this.props.schema, validate, !!isSubmit);
+    const { validate, transformErrors } = this.props;
+    return validateFormData(
+      formData,
+      schema || this.props.schema,
+      validate,
+      transformErrors
+      , !!isSubmit
+    );
   }
 
   renderErrors() {
-    const {status, errors} = this.state;
-    const {showErrorList} = this.props;
+    const { errors, errorSchema, schema, uiSchema } = this.state;
+    const { ErrorList, showErrorList, formContext } = this.props;
 
-    if (status !== "editing" && errors.length && showErrorList != false) {
-      return <ErrorList errors={errors} />;
+    if (errors.length && showErrorList != false) {
+      return (
+        <ErrorList
+          errors={errors}
+          errorSchema={errorSchema}
+          schema={schema}
+          uiSchema={uiSchema}
+          formContext={formContext}
+        />
+      );
     }
     return null;
   }
 
-  onChange = (formData, options={validate: false}) => {
-    const mustValidate = !this.props.noValidate && (this.props.liveValidate || options.validate);
+  onChange = (formData, options = { validate: false }) => {
+    const mustValidate =
+      !this.props.noValidate && (this.props.liveValidate || options.validate);
     const isSubmitQueued = this.state.status === "submitQueued";
-    let state = { status: "editing", formData };
+    let state = { formData };
     if (mustValidate) {
       const { errors, errorSchema } = this.validate(formData);
       state = { ...state, errors, errorSchema };
@@ -89,14 +114,26 @@ export default class Form extends Component {
       if (this.props.onChange) {
         this.props.onChange(this.state);
       }
-      // If we have a submit queued up, in the event that we had just previously entered the onSubmit handler, 
+    });
+      // If we have a submit queued up, in the event that we had just previously entered the onSubmit handler,
       // but had to first blur a text-based input, that supports form submission upon pressing enter, in order
-      // to trigger any field validation to execute 
+      // to trigger any field validation to execute
       if (isSubmitQueued) {
         this.onSubmit();
       }
-    });
-  }
+  };
+
+  onBlur = (...args) => {
+    if (this.props.onBlur) {
+      this.props.onBlur(...args);
+    }
+  };
+
+  onFocus = (...args) => {
+    if (this.props.onFocus) {
+      this.props.onFocus(...args);
+    }
+  };
 
   onSubmit = (event) => {
     if (event) {
@@ -118,7 +155,7 @@ export default class Form extends Component {
         // the EPBC UI), then fallback to relying on a timeout-based method (i.e. within 1 second) for
         // re-entering onSubmit...
         setTimeout(() => {
-          // Only try submitting the form from here, if we have not already submitted the form 
+          // Only try submitting the form from here, if we have not already submitted the form
           // via onChange at the top, after blurring the text-based input...
           if (this.state.status === "submitQueued") {
             this.onSubmit();
@@ -153,7 +190,7 @@ export default class Form extends Component {
           // If we just updated the formData on state, such that it is no longer equivalent to the formData
           // on props, emit the updated state up through onChange, so that we can get the two back in sync...
           // (NOTE: If we don't do this, then we may end up overwriting the new formData that we just modified
-          // modified on state with the formData on props after getStateFromProps executes from 
+          // modified on state with the formData on props after getStateFromProps executes from
           // componentWillReceiveProps)
           if (this.props.onChange && !deepEquals(this.props.formData, this.state.formData)) {
             this.props.onChange(this.state);
@@ -168,14 +205,14 @@ export default class Form extends Component {
       }
       else {
         if (this.props.onSubmit) {
-          this.props.onSubmit(this.state);
+          this.props.onSubmit({ ...this.state, status: "submitted" });
         }
         this.setState({ status: "initial", errors: [], errorSchema: {} });
       }
     }
     else {
       if (this.props.onSubmit) {
-        this.props.onSubmit(this.state);
+        this.props.onSubmit({ ...this.state, status: "submitted" });
       }
       this.setState({ status: "initial", errors: [], errorSchema: {} });
     }
@@ -184,10 +221,12 @@ export default class Form extends Component {
   getRegistry() {
     // For BC, accept passed SchemaField and TitleField props and pass them to
     // the "fields" registry one.
-    const {fields, widgets} = getDefaultRegistry();
+    const { fields, widgets } = getDefaultRegistry();
     return {
-      fields: {...fields, ...this.props.fields},
-      widgets: {...widgets, ...this.props.widgets},
+      fields: { ...fields, ...this.props.fields },
+      widgets: { ...widgets, ...this.props.widgets },
+      ArrayFieldTemplate: this.props.ArrayFieldTemplate,
+      ObjectFieldTemplate: this.props.ObjectFieldTemplate,
       FieldTemplate: this.props.FieldTemplate,
       definitions: this.props.schema.definitions || {},
       formContext: this.props.formContext || {},
@@ -206,15 +245,17 @@ export default class Form extends Component {
       action,
       autocomplete,
       enctype,
-      acceptcharset
+      acceptcharset,
+      noHtml5Validate,
     } = this.props;
 
-    const {schema, uiSchema, formData, errorSchema, idSchema} = this.state;
+    const { schema, uiSchema, formData, errorSchema, idSchema } = this.state;
     const registry = this.getRegistry();
     const _SchemaField = registry.fields.SchemaField;
 
     return (
-      <form className={className ? className : "rjsf"}
+      <form
+        className={className ? className : "rjsf"}
         id={id}
         name={name}
         method={method}
@@ -223,6 +264,7 @@ export default class Form extends Component {
         autoComplete={autocomplete}
         encType={enctype}
         acceptCharset={acceptcharset}
+        noValidate={noHtml5Validate}
         onSubmit={this.onSubmit}>
         {this.renderErrors()}
         <_SchemaField
@@ -232,12 +274,20 @@ export default class Form extends Component {
           idSchema={idSchema}
           formData={formData}
           onChange={this.onChange}
+          onBlur={this.onBlur}
+          onFocus={this.onFocus}
           registry={registry}
-          safeRenderCompletion={safeRenderCompletion}/>
-        { children ? children :
+          safeRenderCompletion={safeRenderCompletion}
+        />
+        {children ? (
+          children
+        ) : (
           <p>
-            <button type="submit" className="btn btn-info">Submit</button>
-          </p> }
+            <button type="submit" className="btn btn-info">
+              Submit
+            </button>
+          </p>
+        )}
       </form>
     );
   }
@@ -248,12 +298,14 @@ if (process.env.NODE_ENV !== "production") {
     schema: PropTypes.object.isRequired,
     uiSchema: PropTypes.object,
     formData: PropTypes.any,
-    widgets: PropTypes.objectOf(PropTypes.oneOfType([
-      PropTypes.func,
-      PropTypes.object,
-    ])),
+    widgets: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.object])
+    ),
     fields: PropTypes.objectOf(PropTypes.func),
+    ArrayFieldTemplate: PropTypes.func,
+    ObjectFieldTemplate: PropTypes.func,
     FieldTemplate: PropTypes.func,
+    ErrorList: PropTypes.func,
     onChange: PropTypes.func,
     onError: PropTypes.func,
     showErrorList: PropTypes.bool,
@@ -268,7 +320,10 @@ if (process.env.NODE_ENV !== "production") {
     enctype: PropTypes.string,
     acceptcharset: PropTypes.string,
     noValidate: PropTypes.bool,
+    noHtml5Validate: PropTypes.bool,
     liveValidate: PropTypes.bool,
+    validate: PropTypes.func,
+    transformErrors: PropTypes.func,
     safeRenderCompletion: PropTypes.bool,
     formContext: PropTypes.object,
   };

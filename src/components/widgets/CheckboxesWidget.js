@@ -1,4 +1,5 @@
-import React, {PropTypes} from "react";
+import React from "react";
+import PropTypes from "prop-types";
 
 
 function selectValue(value, selected, all) {
@@ -15,18 +16,18 @@ function deselectValue(value, selected) {
 }
 
 function CheckboxesWidget(props) {
-  const {id, disabled, options, value, autofocus, ariaDescribedBy, onChange} = props;
+  const {id, disabled, options, value, autofocus, ariaDescribedBy, readonly, onChange} = props;
   const {enumOptions, inline} = options;
   return (
     <div className="checkboxes" id={id}>{
       enumOptions.map((option, index) => {
-        const checked = value && value.indexOf(option.value) !== -1; 
-        const disabledCls = disabled ? "disabled" : "";
+        const checked = value && value.indexOf(option.value) !== -1;
+        const disabledCls = disabled || readonly ? "disabled" : "";
         const checkbox = (
           <span>
             <input type="checkbox"
               id={`${id}_${index}`}
-              checked={checked}
+              checked={checked || readonly}
               disabled={disabled}
               autoFocus={autofocus && index === 0}
               aria-describedby={ariaDescribedBy}
@@ -74,6 +75,7 @@ if (process.env.NODE_ENV !== "production") {
     }).isRequired,
     value: PropTypes.any,
     required: PropTypes.bool,
+    readonly: PropTypes.bool,
     disabled: PropTypes.bool,
     multiple: PropTypes.bool,
     autofocus: PropTypes.bool,

@@ -1,4 +1,5 @@
-import React, {PropTypes} from "react";
+import React from "react";
+import PropTypes from "prop-types";
 import renderHTML from "react-render-html";
 
 function DescriptionField(props) {
@@ -18,7 +19,7 @@ function DescriptionField(props) {
       };
     }
     return <div id={id} className={"field-description" + (descriptionStyle ? " field-description--scrollable" : "")} style={descriptionStyle}>{renderHTML(description)}</div>;
-  } 
+  }
   else {
     return <div id={id} className="field-description">{description}</div>;
   }
