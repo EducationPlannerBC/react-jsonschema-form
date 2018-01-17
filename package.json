@@ -40,14 +40,15 @@
     "react": ">=15"
   },
   "dependencies": {
-    "json-loader": "^0.5.4",
     "ajv": "^5.2.3",
-    "lodash.get": "^4.4.2",
     "lodash.topath": "^4.5.2",
-    "react-render-html": "^0.1.6",
-    "react-textarea-autosize": "^4.0.5",
     "prop-types": "^15.5.8",
-    "setimmediate": "^1.0.5"
+    "setimmediate": "^1.0.5",
+    "json-loader": "^0.5.4",
+    "jsonschema": "^1.0.2",
+    "lodash.get": "^4.4.2",
+    "react-render-html": "^0.1.6",
+    "react-textarea-autosize": "^4.0.5"
   },
   "devDependencies": {
     "atob": "^2.0.3",
