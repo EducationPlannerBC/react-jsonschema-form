@@ -17,7 +17,7 @@ ajv.addFormat(
   /^(#?([0-9A-Fa-f]{3}){1,2}\b|aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow|(rgb\(\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*,\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*,\s*\b([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\b\s*\))|(rgb\(\s*(\d?\d%|100%)+\s*,\s*(\d?\d%|100%)+\s*,\s*(\d?\d%|100%)+\s*\)))$/
 );
 
-import { isObject, mergeObjects } from "./utils";
+import {isObject, mergeObjects} from "./utils";
 
 function toErrorSchema(errors) {
   // Transforms a ajv validation errors list:
@@ -39,7 +39,7 @@ function toErrorSchema(errors) {
     return {};
   }
   return errors.reduce((errorSchema, error) => {
-    const { property, message } = error;
+    const {property, message} = error;
     const path = toPath(property);
     let parent = errorSchema;
 
@@ -99,12 +99,12 @@ function createErrorHandler(formData) {
   };
   if (isObject(formData)) {
     return Object.keys(formData).reduce((acc, key) => {
-      return { ...acc, [key]: createErrorHandler(formData[key]) };
+      return {...acc, [key]: createErrorHandler(formData[key])};
     }, handler);
   }
   if (Array.isArray(formData)) {
     return formData.reduce((acc, value, key) => {
-      return { ...acc, [key]: createErrorHandler(value) };
+      return {...acc, [key]: createErrorHandler(value)};
     }, handler);
   }
   return handler;
@@ -115,9 +115,9 @@ function unwrapErrorHandler(errorHandler) {
     if (key === "addError") {
       return acc;
     } else if (key === "__errors") {
-      return { ...acc, [key]: errorHandler[key] };
+      return {...acc, [key]: errorHandler[key]};
     }
-    return { ...acc, [key]: unwrapErrorHandler(errorHandler[key]) };
+    return {...acc, [key]: unwrapErrorHandler(errorHandler[key])};
   }, {});
 }
 
@@ -133,7 +133,7 @@ function transformAjvErrors(errors = []) {
   }
 
   return errors.map(e => {
-    const { dataPath, keyword, message, params } = e;
+    const {dataPath, keyword, message, params} = e;
     let property = `${dataPath}`;
 
     // put data in expected format
@@ -251,7 +251,7 @@ function formatJsonValidateResult(jsonValidateResult){
         }
       }
     }
-  }
+  };
 
   // Evaluate extended validations (if present) if this form is bound to an object...
   if (formData && typeof formData === "object") {
@@ -276,7 +276,7 @@ function formatJsonValidateResult(jsonValidateResult){
       }
       return parent.properties[prop];
     }, schema);
-    return { propName, propParentSchema };
+    return {propName, propParentSchema};
   };
 
   const newErrors = errors.filter((error) => {
@@ -284,22 +284,22 @@ function formatJsonValidateResult(jsonValidateResult){
     // suppress the error since it will be conveyed as a required field error
     // instead...
     if (["minLength", "enum"].indexOf(error.name) > -1 && !error["instance"]) {
-      const { propName, propParentSchema } = getPropNameAndParentSchema(error);
+      const {propName, propParentSchema} = getPropNameAndParentSchema(error);
 
       return false;
     }
     // Otherwise, if this is a type validation error and the value is null,
     // suppress the error if it is for an optional field...
-    else if(error.name === "type" && error.schema.type !== "boolean" && !error["instance"]) {
-      const { propName, propParentSchema } = getPropNameAndParentSchema(error);
+    else if (error.name === "type" && error.schema.type !== "boolean" && !error["instance"]) {
+      const {propName, propParentSchema} = getPropNameAndParentSchema(error);
       // If the field is not required, ignore the type error and allow the value to be null...
       if (!(propParentSchema.required && propParentSchema.required.indexOf(propName) > -1)) {
         return false;
       }
     }
     // Otherwise, if this is a type validation error for a boolean field...
-    else if(error.name === "type" && error.schema.type === "boolean" && !error["instance"]) {
-      const { propName, propParentSchema } = getPropNameAndParentSchema(error);
+    else if (error.name === "type" && error.schema.type === "boolean" && !error["instance"]) {
+      const {propName, propParentSchema} = getPropNameAndParentSchema(error);
       // If the field is not required, ignore the type error and allow the value to be null...
       if (!(propParentSchema.required && propParentSchema.required.indexOf(propName) > -1)) {
         return false;
@@ -323,8 +323,8 @@ function formatJsonValidateResult(jsonValidateResult){
   }).map((error) => {
     // If this is a type error for a required field with value set to null,
     // then re-frame it as a 'Field is required' error
-    if(error.name === "type"){
-      const { propName, propParentSchema } = getPropNameAndParentSchema(error);
+    if (error.name === "type"){
+      const {propName, propParentSchema} = getPropNameAndParentSchema(error);
       if (propParentSchema.required && propParentSchema.required.indexOf(propName) > -1) {
         error.name = "required";
         error.message = error.schema.title + " is required";
@@ -381,12 +381,12 @@ export default function validateFormData(
     errors = transformErrors(errors);
   }
 
-  errors = Object.assign({}, errors, formatJsonValidateResult(jsonValidate(formData, schema)));
+  // errors = Object.assign({}, errors, formatJsonValidateResult(jsonValidate(formData, schema)));
 
   const errorSchema = toErrorSchema(errors);
 
   if (typeof customValidate !== "function") {
-    return { errors, errorSchema };
+    return {errors, errorSchema};
   }
 
   const errorHandler = customValidate(formData, createErrorHandler(formData), isSubmit);
@@ -397,5 +397,5 @@ export default function validateFormData(
   // properties.
   const newErrors = toErrorList(newErrorSchema);
 
-  return { errors: newErrors, errorSchema: newErrorSchema };
+  return {errors: newErrors, errorSchema: newErrorSchema};
 }
